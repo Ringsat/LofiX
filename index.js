@@ -80,3 +80,38 @@ client.once("ready", () => {
 });
 
 client.login(process.env.TOKEN)const
+
+client.on("interactionCreate", async interaction => {
+  if (!interaction.isButton()) return;
+
+  const queue = client.distube.getQueue(interaction.guild);
+  if (!queue) return interaction.reply({ content: "❌ No music is playing.", ephemeral: true });
+
+  try {
+    switch (interaction.customId) {
+      case "pause":
+        client.distube.pause(interaction.guild);
+        await interaction.reply({ content: "⏸ Paused!", ephemeral: true });
+        break;
+      case "resume":
+        client.distube.resume(interaction.guild);
+        await interaction.reply({ content: "▶️ Resumed!", ephemeral: true });
+        break;
+      case "skip":
+        client.distube.skip(interaction.guild);
+        await interaction.reply({ content: "⏭ Skipped!", ephemeral: true });
+        break;
+      case "stop":
+        client.distube.stop(interaction.guild);
+        await interaction.reply({ content: "⏹ Stopped the music.", ephemeral: true });
+        break;
+      case "queue":
+        const q = queue.songs.map((s, i) => `${i === 0 ? "▶️" : `${i}.`} ${s.name}`).join("\n");
+        await interaction.reply({ content: `📄 **Queue:**\n${q}`, ephemeral: true });
+        break;
+    }
+  } catch (err) {
+    console.error(err);
+    await interaction.reply({ content: "❌ Error handling button.", ephemeral: true });
+  }
+});
