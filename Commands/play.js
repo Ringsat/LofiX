@@ -1,42 +1,41 @@
-const { EmbedBuilder } = require("discord.js");
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
 
 module.exports = {
   name: "play",
+  description: "Plays a song from YouTube.",
   async execute(client, message, args) {
-    const voiceChannel = message.member.voice.channel;
-    if (!voiceChannel)
-      return message.reply("❌ You must join a voice channel first!");
+    if (!message.member.voice.channel) {
+      return message.reply("❌ You need to join a voice channel first.");
+    }
 
-    const song = args.filter(arg => !arg.startsWith("--")).join(" ");
-    if (!song)
-      return message.reply("❌ You must provide a song name or URL!");
-
-    const filters = [];
-    if (args.includes("--lofi")) filters.push("lofi");
-    if (args.includes("--nightcore")) filters.push("nightcore");
+    const query = args.join(" ");
+    if (!query) {
+      return message.reply("❌ Please provide a song name or link.");
+    }
 
     try {
-      if (filters.length) {
-        client.distube.setFilter(message.guild.id, filters);
-      } else {
-        client.distube.setFilter(message.guild.id, []);
-      }
-
-      await client.distube.play(voiceChannel, song, {
+      client.distube.play(message.member.voice.channel, query, {
         textChannel: message.channel,
-        member: message.member,
+        member: message.member
       });
 
       const embed = new EmbedBuilder()
-        .setColor("#2f3136")
-        .setTitle("🎵 Searching...")
-        .setDescription(`🔎 \`${song}\``)
-        .setFooter({ text: "LofiX Music" });
+        .setTitle("🎶 Now Playing")
+        .setDescription(`▶️ **${query}**`)
+        .setColor("#2F3136");
 
-      message.channel.send({ embeds: [embed] });
-    } catch (error) {
-      console.error(error);
+      const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId("pause").setLabel("⏸ Pause").setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder().setCustomId("resume").setLabel("▶️ Resume").setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder().setCustomId("skip").setLabel("⏭ Skip").setStyle(ButtonStyle.Primary),
+        new ButtonBuilder().setCustomId("stop").setLabel("⏹ Stop").setStyle(ButtonStyle.Danger),
+        new ButtonBuilder().setCustomId("queue").setLabel("📄 Queue").setStyle(ButtonStyle.Secondary)
+      );
+
+      await message.channel.send({ embeds: [embed], components: [row] });
+    } catch (err) {
+      console.error(err);
       message.reply("❌ Failed to play the song.");
     }
-  },
+  }
 };
